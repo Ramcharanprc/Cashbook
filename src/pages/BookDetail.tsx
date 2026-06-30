@@ -20,6 +20,31 @@ const CASH_OUT_CATEGORIES = [
   'Rent', 'Salary Paid', 'Utilities', 'Supplies', 'Food', 'Transport', 'Marketing', 'Maintenance', 'Tax', 'Insurance', 'Loan Payment', 'Other Expense'
 ];
 
+const parseAmountExpression = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const expression = trimmed.replace(/\s+/g, '');
+  if (!/^[0-9()+\-*/.]+$/.test(expression)) return null;
+  if (!/\d/.test(expression)) return null;
+  if (/([+\-*/.]){2,}/.test(expression)) return null;
+  if (/[+\-*/.](?=[+\-*/.])/ .test(expression)) return null;
+  if (/^[+\-*/.]/.test(expression) || /[+\-*/.]$/.test(expression)) return null;
+  if (expression.includes('..')) return null;
+
+  const safeExpression = expression.replace(/[^0-9.+\-*/()]/g, '');
+
+  try {
+    const result = Function(`"use strict"; return (${safeExpression})`)();
+    if (typeof result !== 'number' || !Number.isFinite(result) || result <= 0) {
+      return null;
+    }
+    return Number(result.toFixed(2));
+  } catch {
+    return null;
+  }
+};
+
 interface BookInfo {
   id: string;
   name: string;
@@ -103,9 +128,9 @@ export default function BookDetail(_props: Props) {
     e.preventDefault();
     if (!editingTransaction || !editTransactionAmount || !editTransactionCategory || !editTransactionDate) return;
 
-    const numAmount = parseFloat(editTransactionAmount);
-    if (!numAmount || numAmount <= 0) {
-      setEditTransactionError('Please enter a valid amount');
+    const numAmount = parseAmountExpression(editTransactionAmount);
+    if (!numAmount) {
+      setEditTransactionError('Please enter a valid amount or simple calculation such as 788+776');
       return;
     }
 
@@ -228,13 +253,12 @@ export default function BookDetail(_props: Props) {
                 <div className="amount-input-wrapper">
                   <span className="currency-symbol">₹</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     value={editTransactionAmount}
-                    onChange={e => setEditTransactionAmount(e.target.value)}
-                    placeholder="0"
+                    onChange={e => setEditTransactionAmount(e.target.value.replace(/[^0-9()+\-*/.]/g, ''))}
+                    placeholder="e.g. 788+776"
                     required
-                    min="0.01"
-                    step="0.01"
                     className="amount-input"
                   />
                 </div>
