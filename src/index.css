@@ -551,6 +551,55 @@ body {
   color: var(--slate-900);
 }
 
+.modal-filter {
+  width: min(92vw, 480px);
+  max-height: min(90vh, 620px);
+  overflow: auto;
+}
+
+.filter-section {
+  margin-bottom: 16px;
+}
+
+.filter-section label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate-700);
+}
+
+.filter-option-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filter-option-list .btn-filter {
+  background: var(--slate-100);
+  color: var(--slate-600);
+}
+
+.filter-option-list .btn-filter.active {
+  background: var(--white);
+  color: var(--slate-900);
+  box-shadow: var(--shadow-xs);
+}
+
+.filter-date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.filter-date-row input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--slate-300);
+  border-radius: 8px;
+  font: inherit;
+}
+
 .modal form {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
@@ -7,12 +7,10 @@ interface Props {
   user: User;
 }
 
-const CASH_IN_CATEGORIES = [
-  'Sales', 'Services', 'Salary', 'Interest', 'Rental Income', 'Investment', 'Gift Received', 'Refund', 'Other Income'
-];
-const CASH_OUT_CATEGORIES = [
-  'Rent', 'Salary Paid', 'Utilities', 'Supplies', 'Food', 'Transport', 'Marketing', 'Maintenance', 'Tax', 'Insurance', 'Loan Payment', 'Other Expense'
-];
+const DEFAULT_CATEGORIES = {
+  cash_in: ['Sales', 'Services', 'Salary', 'Interest', 'Rental Income', 'Investment', 'Gift Received', 'Refund', 'Other Income'],
+  cash_out: ['Rent', 'Salary Paid', 'Utilities', 'Supplies', 'Food', 'Transport', 'Marketing', 'Maintenance', 'Tax', 'Insurance', 'Loan Payment', 'Other Expense'],
+};
 
 const parseAmountExpression = (value: string) => {
   const trimmed = value.trim();
@@ -46,24 +44,41 @@ export default function AddTransaction({ user }: Props) {
 
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(isCashIn ? 'Other Income' : 'Other Expense');
+  const [customCategory, setCustomCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES[isCashIn ? 'cash_in' : 'cash_out']);
 
-  const categories = isCashIn ? CASH_IN_CATEGORIES : CASH_OUT_CATEGORIES;
+  useEffect(() => {
+    if (!bookId) return;
+
+    const loadCategories = async () => {
+      const { data } = await supabase.from('transactions').select('category').eq('book_id', bookId).eq('user_id', user.id);
+      const existing = (data ?? []).map((item: { category: string | null }) => item.category).filter(Boolean) as string[];
+      const merged = Array.from(new Set([...DEFAULT_CATEGORIES[isCashIn ? 'cash_in' : 'cash_out'], ...existing]));
+      setCategories(merged);
+      if (merged.length > 0) {
+        setCategory(prev => prev || merged[0]);
+      }
+    };
+
+    void loadCategories();
+  }, [bookId, isCashIn, user.id]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
+    const finalCategory = customCategory.trim() || category;
     const numAmount = parseAmountExpression(amount);
     if (!numAmount) {
       setError('Please enter a valid amount or simple calculation such as 788+776');
       return;
     }
-    if (!category) {
-      setError('Please select a category');
+    if (!finalCategory) {
+      setError('Please select or create a category');
       return;
     }
 
@@ -73,7 +88,7 @@ export default function AddTransaction({ user }: Props) {
       user_id: user.id,
       type,
       amount: numAmount,
-      category,
+      category: finalCategory,
       description: description.trim() || null,
       date,
     });
@@ -125,12 +140,23 @@ export default function AddTransaction({ user }: Props) {
                 key={cat}
                 type="button"
                 className={`category-chip ${category === cat ? 'selected' : ''} ${isCashIn ? 'cash-in' : 'cash-out'}`}
-                onClick={() => setCategory(cat)}
+                onClick={() => {
+                  setCategory(cat);
+                  setCustomCategory('');
+                }}
               >
                 {cat}
               </button>
             ))}
           </div>
+          <input
+            value={customCategory}
+            onChange={e => {
+              setCustomCategory(e.target.value);
+              if (e.target.value.trim()) setCategory(e.target.value.trim());
+            }}
+            placeholder="Or create your own category"
+          />
         </div>
 
         <div className="form-group">
