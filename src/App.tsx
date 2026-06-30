@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState, lazy, Suspense } from 'react';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured, supabaseConfigError } from './lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import Layout from './components/Layout';
 
@@ -24,17 +24,29 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+    supabase.auth.getUser().then((response: { data: { user: User | null } }) => {
+      setUser(response.data.user);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: string, session: { user?: User | null } | null) => {
       setUser(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <h2>Configuration required</h2>
+          <p>{supabaseConfigError}</p>
+          <p>Set the Supabase URL and anonymous key in your deployment environment or local .env file.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return <PageLoader />;
