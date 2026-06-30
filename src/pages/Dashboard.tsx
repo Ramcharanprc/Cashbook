@@ -22,6 +22,10 @@ export default function Dashboard({ user }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editingSaving, setEditingSaving] = useState(false);
 
   useEffect(() => {
     fetchBusinesses();
@@ -52,6 +56,33 @@ export default function Dashboard({ user }: Props) {
       setShowAdd(false);
     }
     setSaving(false);
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBusiness || !editName.trim()) return;
+    setEditingSaving(true);
+    const { data, error } = await supabase
+      .from('businesses')
+      .update({ name: editName.trim(), description: editDescription.trim() || null })
+      .eq('id', editingBusiness.id)
+      .select()
+      .single();
+
+    if (!error && data) {
+      setBusinesses(prev => prev.map(business => (business.id === data.id ? data : business)));
+      setEditingBusiness(null);
+      setEditName('');
+      setEditDescription('');
+    }
+
+    setEditingSaving(false);
+  };
+
+  const openEditBusiness = (business: Business) => {
+    setEditingBusiness(business);
+    setEditName(business.name);
+    setEditDescription(business.description ?? '');
   };
 
   const handleDelete = async (id: string) => {
@@ -89,6 +120,28 @@ export default function Dashboard({ user }: Props) {
         </div>
       )}
 
+      {editingBusiness && (
+        <div className="modal-overlay" onClick={() => { setEditingBusiness(null); setEditName(''); setEditDescription(''); }}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>Edit Business</h3>
+            <form onSubmit={handleEdit}>
+              <div className="form-group">
+                <label>Business Name</label>
+                <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="e.g. My Shop" required />
+              </div>
+              <div className="form-group">
+                <label>Description (optional)</label>
+                <input value={editDescription} onChange={e => setEditDescription(e.target.value)} placeholder="e.g. General store" />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => { setEditingBusiness(null); setEditName(''); setEditDescription(''); }}>Cancel</button>
+                <button type="submit" className="btn-primary" disabled={editingSaving}>{editingSaving ? 'Saving...' : 'Save'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="empty-state">Loading...</div>
       ) : businesses.length === 0 ? (
@@ -105,6 +158,9 @@ export default function Dashboard({ user }: Props) {
                 {b.description && <p className="card-desc">{b.description}</p>}
               </div>
               <div className="card-actions">
+                <button className="btn-icon btn-edit" onClick={e => { e.stopPropagation(); openEditBusiness(b); }} title="Edit">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 113 3L7 17l-4 1 1-4 10.5-10.5z"/></svg>
+                </button>
                 <button className="btn-icon btn-delete" onClick={e => { e.stopPropagation(); handleDelete(b.id); }} title="Delete">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>

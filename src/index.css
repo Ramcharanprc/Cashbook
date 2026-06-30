@@ -315,6 +315,8 @@ body {
 .btn-delete:hover { background: var(--red-50); color: var(--red-500); }
 .btn-delete-sm { color: var(--slate-400); }
 .btn-delete-sm:hover { background: var(--red-50); color: var(--red-500); }
+.btn-edit { color: var(--slate-400); }
+.btn-edit:hover { background: var(--slate-100); color: var(--primary-500); }
 
 .btn-full { width: 100%; margin-top: 8px; }
 .cash-in-btn { background: var(--green-500); }
@@ -403,6 +405,13 @@ body {
   justify-content: space-between;
   margin-bottom: 28px;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
