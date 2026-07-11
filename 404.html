@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirecting...</title>
+    <script>
+      (function () {
+        const path = window.location.pathname;
+        const segments = path.split('/').filter(Boolean);
+        const repoName = segments[0] || 'Cashbook';
+        const route = segments.slice(1).join('/');
+        const target = `${window.location.origin}/${repoName}/#/${route}`;
+        window.location.replace(target);
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
