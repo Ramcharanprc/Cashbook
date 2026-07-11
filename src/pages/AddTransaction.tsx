@@ -50,6 +50,7 @@ export default function AddTransaction({ user }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES[isCashIn ? 'cash_in' : 'cash_out']);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   useEffect(() => {
     if (!bookId) return;
@@ -134,29 +135,15 @@ export default function AddTransaction({ user }: Props) {
 
         <div className="form-group">
           <label>Category</label>
-          <div className="category-grid">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                type="button"
-                className={`category-chip ${category === cat ? 'selected' : ''} ${isCashIn ? 'cash-in' : 'cash-out'}`}
-                onClick={() => {
-                  setCategory(cat);
-                  setCustomCategory('');
-                }}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="category-select-row">
+            <span className={`category-chip ${category ? 'selected' : ''} ${isCashIn ? 'cash-in' : 'cash-out'}`}>
+              {category || 'Select category'}
+            </span>
+            <button type="button" className="btn-secondary btn-small" onClick={() => setShowCategoryPicker(true)}>
+              + More
+            </button>
           </div>
-          <input
-            value={customCategory}
-            onChange={e => {
-              setCustomCategory(e.target.value);
-              if (e.target.value.trim()) setCategory(e.target.value.trim());
-            }}
-            placeholder="Or create your own category"
-          />
+          <p className="form-help">Tap + More to choose or create a category.</p>
         </div>
 
         <div className="form-group">
@@ -177,6 +164,58 @@ export default function AddTransaction({ user }: Props) {
             required
           />
         </div>
+
+        {showCategoryPicker && (
+          <div className="modal-overlay" onClick={() => setShowCategoryPicker(false)}>
+            <div className="modal" onClick={e => e.stopPropagation()}>
+              <h3>Select Category</h3>
+              <div className="category-grid">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    className={`category-chip ${category === cat ? `selected ${isCashIn ? 'cash-in' : 'cash-out'}` : ''}`}
+                    onClick={() => {
+                      setCategory(cat);
+                      setCustomCategory('');
+                      setShowCategoryPicker(false);
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="form-group">
+                <label>Custom category</label>
+                <input
+                  value={customCategory}
+                  onChange={e => {
+                    setCustomCategory(e.target.value);
+                    if (e.target.value.trim()) setCategory(e.target.value.trim());
+                  }}
+                  placeholder="Add a new category"
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowCategoryPicker(false)}>Cancel</button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => {
+                    if (customCategory.trim()) {
+                      setCategory(customCategory.trim());
+                    }
+                    setShowCategoryPicker(false);
+                  }}
+                >
+                  Use this category
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <button type="submit" className={`btn-primary btn-full ${isCashIn ? 'cash-in-btn' : 'cash-out-btn'}`} disabled={saving}>
           {saving ? 'Saving...' : `Save ${isCashIn ? 'Cash In' : 'Cash Out'}`}
