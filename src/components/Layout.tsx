@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -9,6 +10,8 @@ interface LayoutProps {
 
 export default function Layout({ user, children }: LayoutProps) {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -16,6 +19,17 @@ export default function Layout({ user, children }: LayoutProps) {
   };
 
   const email = user.email ?? 'User';
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="app-layout">
@@ -31,8 +45,27 @@ export default function Layout({ user, children }: LayoutProps) {
           </h1>
         </div>
         <div className="header-right">
-          <span className="header-email">{email}</span>
-          <button className="btn-logout" onClick={handleLogout}>Logout</button>
+          <div className="header-account" ref={menuRef}>
+            <button
+              type="button"
+              className="account-trigger"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(prev => !prev)}
+            >
+              <span className="account-email">{email}</span>
+              <span className="account-caret">▾</span>
+            </button>
+            {menuOpen && (
+              <div className="account-menu" role="menu">
+                <button type="button" className="account-menu-item" onClick={() => { setMenuOpen(false); navigate('/settings'); }}>
+                  Change Password
+                </button>
+                <button type="button" className="account-menu-item" onClick={() => { setMenuOpen(false); handleLogout(); }}>
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
       <main className="app-main">

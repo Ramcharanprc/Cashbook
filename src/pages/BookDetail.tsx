@@ -71,6 +71,7 @@ export default function BookDetail(_props: Props) {
   const [savingTransactionEdit, setSavingTransactionEdit] = useState(false);
   const [editTransactionError, setEditTransactionError] = useState('');
   const [availableCategories, setAvailableCategories] = useState<string[]>(DEFAULT_CATEGORIES.cash_in);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [typeFilter, setTypeFilter] = useState<'all' | 'cash_in' | 'cash_out'>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | string>('all');
@@ -205,15 +206,17 @@ export default function BookDetail(_props: Props) {
   });
   const visibleCategories = Array.from(new Set(transactions.map(t => t.category))).filter(Boolean).sort((a, b) => a.localeCompare(b));
   const hasActiveFilters = typeFilter !== 'all' || categoryFilter !== 'all' || Boolean(dateFrom) || Boolean(dateTo);
-  const totalIn = transactions.filter(t => t.type === 'cash_in').reduce((s, t) => s + Number(t.amount), 0);
-  const totalOut = transactions.filter(t => t.type === 'cash_out').reduce((s, t) => s + Number(t.amount), 0);
+  const totalIn = filtered.filter(t => t.type === 'cash_in').reduce((s, t) => s + Number(t.amount), 0);
+  const totalOut = filtered.filter(t => t.type === 'cash_out').reduce((s, t) => s + Number(t.amount), 0);
   const balance = totalIn - totalOut;
 
   const formatCurrency = (n: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(n);
   };
 
-  const editingCategories = editTransactionType === 'cash_in' ? availableCategories : availableCategories;
+  const editingCategories = editTransactionType === 'cash_in'
+    ? Array.from(new Set([...DEFAULT_CATEGORIES.cash_in, ...availableCategories.filter(cat => !DEFAULT_CATEGORIES.cash_out.includes(cat))]))
+    : Array.from(new Set([...DEFAULT_CATEGORIES.cash_out, ...availableCategories.filter(cat => !DEFAULT_CATEGORIES.cash_in.includes(cat))]));
 
   const openFiltersModal = () => {
     setDraftTypeFilter(typeFilter);
@@ -325,32 +328,65 @@ export default function BookDetail(_props: Props) {
                 </div>
               </div>
 
-              <div className="form-group">
+                        <div className="form-group">
                 <label>Category</label>
-                <div className="category-grid">
-                  {editingCategories.map(cat => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`category-chip ${editTransactionCategory === cat ? `selected ${editTransactionType}` : ''}`}
-                      onClick={() => {
-                        setEditTransactionCategory(cat);
-                        setEditTransactionCustomCategory('');
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                <div className="category-select-row">
+                  <span className={`category-chip ${editTransactionCategory ? `selected ${editTransactionType}` : ''}`}>
+                    {editTransactionCategory || 'Select category'}
+                  </span>
+                  <button type="button" className="btn-secondary btn-small" onClick={() => setShowCategoryPicker(true)}>
+                    + More
+                  </button>
                 </div>
-                <input
-                  value={editTransactionCustomCategory}
-                  onChange={e => {
-                    setEditTransactionCustomCategory(e.target.value);
-                    if (e.target.value.trim()) setEditTransactionCategory(e.target.value.trim());
-                  }}
-                  placeholder="Or create your own category"
-                />
+                <p className="form-help">Tap + to choose a different category.</p>
               </div>
+
+              {showCategoryPicker && (
+                <div className="modal-overlay" onClick={() => setShowCategoryPicker(false)}>
+                  <div className="modal" onClick={e => e.stopPropagation()}>
+                    <h3>Select Category</h3>
+                    <div className="category-grid">
+                      {editingCategories.map(cat => (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`category-chip ${editTransactionCategory === cat ? `selected ${editTransactionType}` : ''}`}
+                          onClick={() => {
+                            setEditTransactionCategory(cat);
+                            setEditTransactionCustomCategory('');
+                            setShowCategoryPicker(false);
+                          }}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="form-group">
+                      <label>Custom category</label>
+                      <input
+                        value={editTransactionCustomCategory}
+                        onChange={e => setEditTransactionCustomCategory(e.target.value)}
+                        placeholder="Add a new category"
+                      />
+                    </div>
+                    <div className="modal-actions">
+                      <button type="button" className="btn-secondary" onClick={() => setShowCategoryPicker(false)}>Cancel</button>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() => {
+                          if (editTransactionCustomCategory.trim()) {
+                            setEditTransactionCategory(editTransactionCustomCategory.trim());
+                          }
+                          setShowCategoryPicker(false);
+                        }}
+                      >
+                        Use this category
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Description (optional)</label>

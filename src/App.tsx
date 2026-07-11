@@ -10,6 +10,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const BusinessDetail = lazy(() => import('./pages/BusinessDetail'));
 const BookDetail = lazy(() => import('./pages/BookDetail'));
 const AddTransaction = lazy(() => import('./pages/AddTransaction'));
+const Settings = lazy(() => import('./pages/Settings'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 
 function PageLoader() {
   return (
@@ -58,6 +60,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
@@ -72,6 +75,7 @@ export default function App() {
           <Route path="/business/:businessId" element={<BusinessDetail user={user} />} />
           <Route path="/business/:businessId/book/:bookId" element={<BookDetail user={user} />} />
           <Route path="/business/:businessId/book/:bookId/add/:type" element={<AddTransaction user={user} />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
